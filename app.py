@@ -589,11 +589,13 @@ def generate_forecast_and_backtest(df: pd.DataFrame, horizon: int, model_type: s
     close_series = df["Close"].astype(float).dropna()
     if len(close_series) < 35:
         return {"ok": False, "error": "At least 35 bars required for forecasting."}
+    
     values = close_series.values
     dates = close_series.index
     median_delta = pd.Series(dates).diff().median()
     if pd.isna(median_delta) or median_delta <= pd.Timedelta(0):
         median_delta = pd.Timedelta(days=1)
+        
     future_dates, curr_dt = [], dates[-1]
     while len(future_dates) < horizon:
         curr_dt += median_delta
@@ -621,6 +623,7 @@ def generate_forecast_and_backtest(df: pd.DataFrame, horizon: int, model_type: s
         bt_steps = min(15, max(5, len(values) // 6))
         train_start = len(values) - bt_steps
         actuals, preds, actual_dirs, pred_dirs = [], [], [], []
+        
         for idx in range(train_start, len(values)):
             hist = values[:idx]
             true_v, prev_v = float(values[idx]), float(hist[-1])
@@ -639,6 +642,7 @@ def generate_forecast_and_backtest(df: pd.DataFrame, horizon: int, model_type: s
         mape = float(mean_absolute_percentage_error(actuals, preds) * 100.0)
         dir_acc = (sum(1 for a, p in zip(actual_dirs, pred_dirs) if a == p) / len(actual_dirs)) * 100.0 if actual_dirs else 0.0
         fc_df = pd.DataFrame({"Date": future_dates, "Forecast": mean_fc, "Lower_80": lower_80, "Upper_80": upper_80, "Lower_95": lower_95, "Upper_95": upper_95})
+        
         return {
             "ok": True,
             "model_type": model_type,
@@ -652,3 +656,6 @@ def generate_forecast_and_backtest(df: pd.DataFrame, horizon: int, model_type: s
             "bt_dates": dates[train_start:],
             "bt_preds": preds,
         }
+        
+    except Exception as exc:
+        return {"ok": False, "error": f"Forecasting failed: {exc}"}
