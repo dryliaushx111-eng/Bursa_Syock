@@ -1,9 +1,9 @@
-streamlit>=1.37
+streamlit>=1.35.0
 yfinance>=0.2.40
-pandas>=2.0
-numpy>=1.26
-plotly>=5.20
-feedparser>=6.0
-statsmodels>=0.14
-scikit-learn>=1.4
-tzdata
+pandas>=2.1.0
+numpy>=1.26.0
+plotly>=5.22.0
+feedparser>=6.0.11
+statsmodels>=0.14.2
+scikit-learn>=1.4.0
+supabase>=2.0.0
