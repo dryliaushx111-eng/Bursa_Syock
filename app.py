@@ -308,18 +308,22 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         if not info:
             return {"ok": False}
             
-        # 1. Aggressive Dividend Yield Fallback Logic
+        # 1. Dividend Yield Logic
         div_yield = info.get("dividendYield")
         if div_yield is None:
             div_yield = info.get("trailingAnnualDividendYield")
             
-        # If both yield fields are blank but a cash rate exists, calculate it manually
         if div_yield is None and info.get("trailingAnnualDividendRate") and info.get("previousClose"):
             div_yield = info.get("trailingAnnualDividendRate") / info.get("previousClose")
             
+        # Fix Yahoo Finance data anomalies (Sen vs Ringgit mismatch)
+        # If the raw yield is > 0.50 (50%), it is a unit error. Divide by 100 to normalize it.
+        if div_yield and div_yield > 0.50:
+            div_yield = div_yield / 100.0
+            
         div_yield_pct = (div_yield * 100) if div_yield else 0.0
 
-        # 2. Aggressive P/E Fallback Logic
+        # 2. P/E Logic
         pe = info.get("trailingPE")
         if pe is None:
             pe = info.get("forwardPE")
@@ -327,7 +331,7 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         return {
             "ok": True,
             "market_cap": info.get("marketCap", 0),
-            "pe_ratio": pe if pe else 0.0,
+            "pe_ratio": float(pe) if pe else 0.0,
             "dividend_yield": div_yield_pct,
             "pb_ratio": info.get("priceToBook", 0.0)
         }
