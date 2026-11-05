@@ -640,5 +640,15 @@ def generate_forecast_and_backtest(df: pd.DataFrame, horizon: int, model_type: s
         dir_acc = (sum(1 for a, p in zip(actual_dirs, pred_dirs) if a == p) / len(actual_dirs)) * 100.0 if actual_dirs else 0.0
         fc_df = pd.DataFrame({"Date": future_dates, "Forecast": mean_fc, "Lower_80": lower_80, "Upper_80": upper_80, "Lower_95": lower_95, "Upper_95": upper_95})
         return {
-            "ok": True, "model_type": model_type, "horizon": horizon, "forecast_df": fc_df,
-            "target_price": float(mean_fc[-1]), "expected_return_pct": float((
+            "ok": True,
+            "model_type": model_type,
+            "horizon": horizon,
+            "forecast_df": fc_df,
+            "target_price": float(mean_fc[-1]),
+            "expected_return_pct": float((mean_fc[-1] - values[-1]) / values[-1] * 100.0),
+            "mape_pct": mape,
+            "directional_accuracy_pct": dir_acc,
+            "bt_steps": bt_steps,
+            "bt_dates": dates[train_start:],
+            "bt_preds": preds,
+        }
