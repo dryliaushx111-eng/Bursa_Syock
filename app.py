@@ -307,15 +307,32 @@ def fetch_fundamentals(symbol: str) -> Dict[str, Any]:
         info = yf.Ticker(symbol).info
         if not info:
             return {"ok": False}
+            
+        # 1. Aggressive Dividend Yield Fallback Logic
+        div_yield = info.get("dividendYield")
+        if div_yield is None:
+            div_yield = info.get("trailingAnnualDividendYield")
+            
+        # If both yield fields are blank but a cash rate exists, calculate it manually
+        if div_yield is None and info.get("trailingAnnualDividendRate") and info.get("previousClose"):
+            div_yield = info.get("trailingAnnualDividendRate") / info.get("previousClose")
+            
+        div_yield_pct = (div_yield * 100) if div_yield else 0.0
+
+        # 2. Aggressive P/E Fallback Logic
+        pe = info.get("trailingPE")
+        if pe is None:
+            pe = info.get("forwardPE")
+            
         return {
             "ok": True,
             "market_cap": info.get("marketCap", 0),
-            "pe_ratio": info.get("trailingPE", info.get("forwardPE", 0.0)),
-            "dividend_yield": info.get("dividendYield", 0.0) * 100 if info.get("dividendYield") else 0.0,
+            "pe_ratio": pe if pe else 0.0,
+            "dividend_yield": div_yield_pct,
             "pb_ratio": info.get("priceToBook", 0.0)
         }
     except Exception as e:
-        print(f"Fundamental fetch error: {e}")
+        print(f"Fundamental fetch error for {symbol}: {e}")
         return {"ok": False}
 
 
